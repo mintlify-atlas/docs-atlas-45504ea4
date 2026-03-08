@@ -1,0 +1,66 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "BloodCat",
+  "projectDescription": "A security tool for discovering publicly exposed RTSP network cameras with weak credentials.",
+  "theme": "aspen",
+  "primaryColor": "#DC2626",
+  "lightColor": "#FCA5A5",
+  "darkColor": "#991B1B",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation"
+        ]
+      },
+      {
+        "group": "Usage",
+        "pages": [
+          "usage/command-reference",
+          "usage/fofa-integration",
+          "usage/examples"
+        ]
+      },
+      {
+        "group": "Camera Support",
+        "pages": [
+          "cameras/supported-brands",
+          "cameras/detection"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/output-format",
+          "reference/viewer",
+          "reference/troubleshooting"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Brute-force RTSP cameras with weak credentials",
+    "FoFa API integration for geographical camera discovery",
+    "Support for 10+ camera brands (Hikvision, Dahua, Axis, etc.)",
+    "Built-in stream viewer with ffplay",
+    "Automatic brand detection and targeted path scanning"
+  ],
+  "publicApiSurface": [
+    "bloodcat.py --ip <IP:PORT>",
+    "bloodcat.py --country <COUNTRY> --region <REGION> --key <FOFA_KEY>",
+    "CamLib.Hikvision()",
+    "CamLib.Dahua()",
+    "CamLib.Uniview()",
+    "CamLib.Axis()",
+    "CamLib.Sony()",
+    "CamLib.Vivotek()",
+    "CamLib.TVT()",
+    "CamLib.Reolink()",
+    "CamLib.Milesight()",
+    "Execute_Cam.run(ip, port)",
+    "Fofa.query(country, key, region, city)",
+    "play.sh"
+  ]
+}
