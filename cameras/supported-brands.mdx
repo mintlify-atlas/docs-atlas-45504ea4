@@ -1,0 +1,233 @@
+---
+title: "Supported Camera Brands"
+description: "Complete reference of camera brands and configurations supported by BloodCat"
+---
+
+BloodCat supports 9 major IP camera manufacturers, each with specific RTSP path configurations and default user accounts. The `CamLib` class in `lib/camlib.py` provides brand-specific configurations for optimal camera access.
+
+## Overview
+
+Each camera brand has:
+- **Default usernames**: Common administrative accounts for the brand
+- **RTSP paths**: Known streaming endpoint paths for accessing camera feeds
+
+BloodCat uses these configurations to efficiently test camera access during penetration tests.
+
+## Supported Brands
+
+<AccordionGroup>
+  <Accordion title="Hikvision">
+    **Default Users**
+    - `admin`
+    - `root`
+    - `supervisor`
+
+    **RTSP Paths**
+    ```python
+    Streaming/Channels/101
+    Streaming/Channels/102
+    live.sdp
+    videoMain
+    media/video1
+    media/video2
+    ```
+
+    <Info>
+    Hikvision is one of the world's largest camera manufacturers. The `Streaming/Channels/101` and `102` paths are commonly used for main and sub-streams.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Dahua">
+    **Default Users**
+    - `root`
+    - `system`
+
+    **RTSP Paths**
+    ```python
+    cam/realmonitor?channel=1&subtype=0
+    cam/realmonitor?channel=1&subtype=1
+    live.sdp
+    videoMain
+    media/video1
+    media/video2
+    ```
+
+    <Info>
+    Dahua cameras use the `cam/realmonitor` endpoint with channel and subtype parameters to specify stream quality.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Uniview">
+    **Default Users**
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    ucast/1/1
+    stream1
+    live.sdp
+    videoMain
+    media/video1
+    media/video2
+    ```
+
+    <Info>
+    Uniview cameras typically use the `ucast` path for unicast streaming.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Axis">
+    **Default Users**
+    - `root`
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    axis-media/media.amp
+    axis-cgi/mjpg/video.cgi
+    axis-cgi/media.cgi
+    live.sdp
+    ```
+
+    <Info>
+    Axis cameras use distinctive `axis-media` and `axis-cgi` paths for their streaming endpoints.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Sony">
+    **Default Users**
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    SNC/media/media.amp
+    live.sdp
+    videoMain
+    ```
+
+    <Info>
+    Sony cameras use the `SNC/media` path structure for their RTSP streams.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Vivotek">
+    **Default Users**
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    live.sdp
+    live
+    videoMain
+    videoSub
+    ```
+
+    <Info>
+    Vivotek cameras support both main and sub-stream access through `videoMain` and `videoSub` paths.
+    </Info>
+  </Accordion>
+
+  <Accordion title="TVT">
+    **Default Users**
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    cam/realmonitor?channel=1&subtype=0
+    live.sdp
+    videoMain
+    media/video1
+    media/video2
+    stream1
+    stream2
+    h264
+    h265
+    videoSub
+    ch0_0.h264
+    ch1_0.h264
+    user=admin_password=123456_channel=1_stream=0.sdp
+    live/ch00_0
+    0
+    1
+    11
+    12
+    h264Preview_01_main
+    h264Preview_01_sub
+    ```
+
+    <Warning>
+    TVT has the most extensive path list (19 paths) as these cameras often use various OEM configurations and path structures.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Reolink">
+    **Default Users**
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    h264Preview_01_main
+    h264Preview_01_sub
+    live.sdp
+    ```
+
+    <Info>
+    Reolink cameras use the `h264Preview` naming convention for main and sub-streams.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Milesight">
+    **Default Users**
+    - `admin`
+
+    **RTSP Paths**
+    ```python
+    Streaming/Channels/101
+    Streaming/Channels/102
+    live.sdp
+    videoMain
+    media/video1
+    ```
+
+    <Info>
+    Milesight uses a similar path structure to Hikvision cameras.
+    </Info>
+  </Accordion>
+</AccordionGroup>
+
+## Brand Configuration Matrix
+
+| Brand | Default Users | Path Count | Primary Path Pattern |
+|-------|---------------|------------|----------------------|
+| Hikvision | admin, root, supervisor | 6 | `Streaming/Channels/` |
+| Dahua | root, system | 6 | `cam/realmonitor?` |
+| Uniview | admin | 6 | `ucast/` |
+| Axis | root, admin | 4 | `axis-media/` |
+| Sony | admin | 3 | `SNC/media/` |
+| Vivotek | admin | 4 | `videoMain/Sub` |
+| TVT | admin | 19 | Mixed (OEM paths) |
+| Reolink | admin | 3 | `h264Preview_` |
+| Milesight | admin | 5 | `Streaming/Channels/` |
+
+## Implementation Reference
+
+Each brand configuration is implemented as a method in the `CamLib` class (`lib/camlib.py:15-127`). The methods return a tuple of `(users, paths)` that BloodCat uses during brute-force operations.
+
+```python
+class CamLib():
+    def Hikvision(self):
+        paths = [
+            'Streaming/Channels/101', 
+            'Streaming/Channels/102',  
+            'live.sdp',
+            'videoMain',
+            'media/video1',
+            'media/video2',
+        ]
+        users = ['admin', 'root', 'supervisor']
+        return (users, paths)
+```
+
+<Note>
+These configurations are based on manufacturer documentation and real-world camera deployments. BloodCat automatically selects the appropriate configuration based on RTSP banner detection.
+</Note>

@@ -1,0 +1,128 @@
+---
+title: 'Output Format'
+description: 'Understanding BloodCat output files and RTSP URL format'
+---
+
+## Output File Location
+
+BloodCat saves all successfully cracked RTSP URLs to:
+
+```
+./data/ipcam.info
+```
+
+The `data` directory is automatically created if it doesn't exist (see `lib/camlib.py:282`).
+
+## RTSP URL Format
+
+When BloodCat successfully authenticates to an IP camera, it constructs and saves the RTSP URL in the following format:
+
+```
+rtsp://username:password@ip:port/path
+```
+
+### Format Components
+
+<AccordionGroup>
+  <Accordion title="username">
+    The username that successfully authenticated. Common usernames include:
+    - `admin`
+    - `root`
+    - `supervisor`
+    - `system`
+    
+    The specific username depends on the camera vendor (Hikvision, Dahua, etc.).
+  </Accordion>
+
+  <Accordion title="password">
+    The password from BloodCat's dictionary that successfully authenticated. The tool tests common weak passwords like:
+    - `123456`
+    - `admin`
+    - `password`
+    - `12345`
+    - And 29 other common passwords
+  </Accordion>
+
+  <Accordion title="ip">
+    The IP address of the target camera.
+  </Accordion>
+
+  <Accordion title="port">
+    The RTSP port (typically `554` by default).
+  </Accordion>
+
+  <Accordion title="path">
+    The RTSP stream path, which varies by vendor:
+    - **Hikvision**: `Streaming/Channels/101`, `Streaming/Channels/102`
+    - **Dahua**: `cam/realmonitor?channel=1&subtype=0`
+    - **Uniview**: `ucast/1/1`, `stream1`
+    - **Axis**: `axis-media/media.amp`
+    - And other vendor-specific paths
+  </Accordion>
+</AccordionGroup>
+
+## Example Output
+
+### Single Camera Result
+
+```text
+rtsp://admin:123456@192.168.1.100:554/Streaming/Channels/101
+```
+
+### Multiple Camera Results
+
+```text
+rtsp://admin:admin@10.0.0.50:554/cam/realmonitor?channel=1&subtype=0
+rtsp://root:password@10.0.0.51:554/live.sdp
+rtsp://admin:123456@10.0.0.52:554/h264Preview_01_main
+```
+
+## How Results Are Saved
+
+From `lib/camlib.py:279-284`, when a valid credential is found:
+
+```python
+rtsp_url = f"rtsp://{username}:{password}@{ip}:{port}/{path}"
+print("[+] Successfully obtained RTSP URL")
+print(f"[!] RTSP URL: {rtsp_url}")
+os.makedirs('./data', exist_ok=True)
+with open('./data/ipcam.info', 'a', encoding='utf-8') as f:
+    f.write(rtsp_url + '\n')
+```
+
+<Note>
+  Results are **appended** to the file using mode `'a'`. Each RTSP URL is written on a new line. This allows you to run multiple scans without losing previous results.
+</Note>
+
+## File Behavior
+
+<CardGroup cols={2}>
+  <Card title="Append Mode" icon="plus">
+    New URLs are added to the end of the file without overwriting existing entries.
+  </Card>
+  
+  <Card title="UTF-8 Encoding" icon="font">
+    File is written with UTF-8 encoding to support international characters.
+  </Card>
+  
+  <Card title="Auto-Creation" icon="folder-plus">
+    The `./data` directory is created automatically if it doesn't exist.
+  </Card>
+  
+  <Card title="Newline Separated" icon="bars">
+    Each RTSP URL is on its own line for easy parsing.
+  </Card>
+</CardGroup>
+
+## Using the Output
+
+The output file can be used to:
+
+1. **View streams** with the included `play.sh` script
+2. **Import into VLC** or other media players
+3. **Parse programmatically** for further analysis
+4. **Archive** discovered camera credentials
+
+<Warning>
+  The `ipcam.info` file contains plaintext credentials. Store it securely and never commit it to version control.
+</Warning>

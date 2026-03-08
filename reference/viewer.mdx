@@ -1,0 +1,196 @@
+---
+title: 'Stream Viewer'
+description: 'Using the play.sh script to view discovered RTSP streams'
+---
+
+## Overview
+
+BloodCat includes a bash script `play.sh` that automatically opens all discovered RTSP streams in individual viewing windows using `ffplay`.
+
+## Requirements
+
+### FFmpeg Installation
+
+The viewer requires `ffplay`, which is part of the FFmpeg package.
+
+<Steps>
+  <Step title="Check if ffplay is installed">
+    ```bash
+    ffplay -version
+    ```
+  </Step>
+  
+  <Step title="Install FFmpeg (if needed)">
+    **Ubuntu/Debian:**
+    ```bash
+    sudo apt update && sudo apt install ffmpeg
+    ```
+    
+    **macOS:**
+    ```bash
+    brew install ffmpeg
+    ```
+    
+    **Arch Linux:**
+    ```bash
+    sudo pacman -S ffmpeg
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The script automatically checks for `ffplay` and displays installation instructions if it's missing (see `play.sh:11-17`).
+</Note>
+
+## Usage
+
+### Basic Usage
+
+After running BloodCat and discovering cameras:
+
+```bash
+./play.sh
+```
+
+This will:
+1. Read all RTSP URLs from `./data/ipcam.info`
+2. Open each stream in a separate `ffplay` window
+3. Display streams in a grid layout
+
+### What Happens
+
+From `play.sh:27-37`, the script:
+
+```bash
+while IFS= read -r line
+do
+    # Skip empty lines or invalid RTSP URLs
+    if [[ -z "$line" || ! "$line" =~ ^rtsp:// ]]; then
+        continue
+    fi
+
+    echo "Playing stream: $line"
+    ffplay -rtsp_transport tcp -x 420 -y 340 "$line" &
+    sleep 1
+done < "$FILE"
+```
+
+## FFplay Command Parameters
+
+The actual command used to play each stream:
+
+```bash
+ffplay -rtsp_transport tcp -x 420 -y 340 "rtsp://username:password@ip:port/path" &
+```
+
+### Parameter Breakdown
+
+<AccordionGroup>
+  <Accordion title="-rtsp_transport tcp">
+    Forces RTSP to use TCP instead of UDP for more reliable streaming through firewalls and NAT.
+  </Accordion>
+
+  <Accordion title="-x 420">
+    Sets the video window width to 420 pixels.
+  </Accordion>
+
+  <Accordion title="-y 340">
+    Sets the video window height to 340 pixels.
+  </Accordion>
+
+  <Accordion title="& (background)">
+    Runs the ffplay process in the background, allowing multiple streams to play simultaneously.
+  </Accordion>
+</AccordionGroup>
+
+## Viewing Grid Layout
+
+Each stream opens in a window sized **420×340 pixels**. This size is chosen to allow multiple camera feeds to be arranged in a grid on your screen without overlapping.
+
+<Info>
+  For example, on a 1920×1080 display, you can comfortably view approximately 12 camera feeds (4 columns × 3 rows) simultaneously.
+</Info>
+
+### Example Layout
+
+```
+┌─────────┬─────────┬─────────┬─────────┐
+│ Camera 1│ Camera 2│ Camera 3│ Camera 4│
+│ 420x340 │ 420x340 │ 420x340 │ 420x340 │
+├─────────┼─────────┼─────────┼─────────┤
+│ Camera 5│ Camera 6│ Camera 7│ Camera 8│
+│ 420x340 │ 420x340 │ 420x340 │ 420x340 │
+└─────────┴─────────┴─────────┴─────────┘
+```
+
+## Error Handling
+
+### File Not Found
+
+From `play.sh:20-24`, the script checks if the output file exists:
+
+```bash
+FILE="./data/ipcam.info"
+if [ ! -f "$FILE" ]; then
+    echo "File $FILE not found!"
+    exit 1
+fi
+```
+
+<Warning>
+  You must run BloodCat and successfully discover at least one camera before using the viewer.
+</Warning>
+
+### Invalid URLs
+
+The script automatically skips:
+- Empty lines
+- Lines that don't start with `rtsp://`
+
+This prevents errors from malformed entries in the output file.
+
+## Stopping the Viewer
+
+### Stop All Streams
+
+Since all `ffplay` instances run in the background, you can stop them all at once:
+
+```bash
+pkill ffplay
+```
+
+### Stop Individual Stream
+
+Close individual stream windows by:
+- Clicking the window close button
+- Pressing `ESC` or `Q` while the window is focused
+
+## Advanced Usage
+
+### Custom Window Size
+
+You can modify the window dimensions by editing `play.sh:35`:
+
+```bash
+ffplay -rtsp_transport tcp -x 640 -y 480 "$line" &
+```
+
+### UDP Transport
+
+If you prefer UDP (faster but less reliable):
+
+```bash
+ffplay -rtsp_transport udp -x 420 -y 340 "$line" &
+```
+
+### Full Screen Mode
+
+To play a single stream in fullscreen:
+
+```bash
+ffplay -rtsp_transport tcp -fs "rtsp://admin:123456@192.168.1.100:554/live.sdp"
+```
+
+<Tip>
+  Press `F` while an ffplay window is focused to toggle fullscreen mode.
+</Tip>

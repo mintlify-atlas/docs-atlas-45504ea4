@@ -1,0 +1,154 @@
+---
+title: Installation
+description: Install BloodCat and its dependencies to start scanning RTSP cameras
+---
+
+## System Requirements
+
+Before installing BloodCat, ensure your system meets the following requirements:
+
+- **Python**: Version 3.6 or higher
+- **Operating System**: Linux (Ubuntu/Debian recommended), macOS, or Windows with WSL
+- **FFmpeg**: Required for the camera viewer functionality
+- **Internet Connection**: Required for FOFA API integration
+
+## Installation Steps
+
+<Steps>
+  <Step title="Install System Dependencies">
+    BloodCat requires FFmpeg for streaming and viewing camera feeds. Install it using your package manager:
+
+    <CodeGroup>
+    ```bash Ubuntu/Debian
+    sudo apt update && sudo apt install ffmpeg
+    ```
+
+    ```bash Fedora/RHEL
+    sudo dnf install ffmpeg
+    ```
+
+    ```bash macOS
+    brew install ffmpeg
+    ```
+
+    ```bash Arch Linux
+    sudo pacman -S ffmpeg
+    ```
+    </CodeGroup>
+
+    <Note>
+    FFmpeg includes both `ffmpeg` (for encoding/decoding) and `ffplay` (for viewing streams). BloodCat's viewer (`play.sh`) uses `ffplay` to display camera feeds.
+    </Note>
+  </Step>
+
+  <Step title="Install Python Dependencies">
+    BloodCat requires two Python packages: `tqdm` for progress bars and `requests` for API communication.
+
+    Install them using pip:
+
+    ```bash
+    pip install tqdm requests
+    ```
+
+    Or if you're using Python 3 explicitly:
+
+    ```bash
+    pip3 install tqdm requests
+    ```
+
+    <Info>
+    **Package Details:**
+    - `tqdm`: Provides smart progress bars for credential brute-force operations
+    - `requests`: Handles HTTP requests for FOFA API queries
+    </Info>
+  </Step>
+
+  <Step title="Clone the Repository">
+    Download BloodCat from the official GitHub repository:
+
+    ```bash
+    git clone https://github.com/MartinxMax/BloodCat.git
+    cd BloodCat
+    ```
+  </Step>
+
+  <Step title="Verify Installation">
+    Verify that BloodCat is installed correctly by running the help command:
+
+    ```bash
+    python3 bloodcat.py -h
+    ```
+
+    You should see the BloodCat ASCII art logo and the help menu with available options:
+
+    ```
+    Blood Cat - RTSP Camera Weak Credential Scanner
+
+    options:
+      -h, --help         show this help message and exit
+      --country COUNTRY  Country
+      --city CITY        City
+      --region REGION    Area
+      --key KEY          Fofa API key
+      --ip IP            IP:PORT
+    ```
+  </Step>
+
+  <Step title="Verify Viewer (Optional)">
+    If you plan to view discovered camera streams, verify that the viewer script is executable:
+
+    ```bash
+    chmod +x play.sh
+    ./play.sh
+    ```
+
+    <Warning>
+    The viewer script (`play.sh`) will fail if no cameras have been discovered yet. This is expected behavior. After running a successful scan, camera URLs will be saved to `./data/ipcam.info` and can be viewed with this script.
+    </Warning>
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### FFmpeg Not Found
+
+If you encounter an error about `ffplay` not being found when running `play.sh`, ensure FFmpeg is properly installed:
+
+```bash
+which ffplay
+```
+
+If this returns nothing, reinstall FFmpeg using the commands in Step 1.
+
+### Python Module Not Found
+
+If you see `ModuleNotFoundError` for `tqdm` or `requests`, ensure you installed the dependencies:
+
+```bash
+python3 -m pip list | grep -E "tqdm|requests"
+```
+
+If they're not listed, reinstall them:
+
+```bash
+pip3 install tqdm requests
+```
+
+### Permission Denied
+
+If you encounter permission issues when running scripts:
+
+```bash
+chmod +x bloodcat.py play.sh
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Command Reference" icon="rocket" href="/usage/command-reference">
+    Learn all available command-line options
+  </Card>
+  <Card title="Examples" icon="code" href="/usage/examples">
+    See real-world usage examples
+  </Card>
+</CardGroup>

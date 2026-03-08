@@ -1,0 +1,98 @@
+---
+title: Introduction
+description: A security tool for discovering publicly exposed RTSP network cameras with weak credentials
+---
+
+# Welcome to BloodCat
+
+BloodCat is a powerful command-line security tool designed to identify publicly exposed RTSP network cameras that use weak or default credentials. It helps security researchers and network administrators assess camera security across networks and geographical regions.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Credential Brute-Force" icon="shield-halved">
+    Test RTSP cameras against common default passwords to identify security vulnerabilities
+  </Card>
+  <Card title="Geographical Discovery" icon="globe">
+    Integrate with FoFa API to discover cameras by country, region, and city
+  </Card>
+  <Card title="Brand Detection" icon="camera">
+    Automatically detect and target 10+ camera brands including Hikvision, Dahua, Axis, and more
+  </Card>
+  <Card title="Built-in Viewer" icon="play">
+    View discovered camera streams directly with the included ffplay-based viewer
+  </Card>
+</CardGroup>
+
+## Supported Camera Brands
+
+BloodCat includes specialized detection and authentication patterns for:
+
+- **Hikvision** — Industry-leading surveillance cameras
+- **Dahua** — Enterprise security systems
+- **Uniview** — IP camera solutions
+- **Axis** — Network camera manufacturer
+- **Sony** — Professional security cameras
+- **Vivotek** — Network surveillance equipment
+- **TVT** — Digital video recorders
+- **Reolink** — Consumer security cameras
+- **Milesight** — IoT surveillance devices
+
+## How It Works
+
+<Steps>
+  <Step title="Target Selection">
+    Specify a single camera IP or use FoFa API to discover cameras in specific geographical regions
+  </Step>
+  <Step title="Banner Detection">
+    Connect to the RTSP service and identify the camera brand from the server banner
+  </Step>
+  <Step title="Credential Testing">
+    Test brand-specific authentication paths with common default credentials
+  </Step>
+  <Step title="Results Storage">
+    Save successfully authenticated RTSP URLs to `./data/ipcam.info` for later viewing
+  </Step>
+</Steps>
+
+## Use Cases
+
+<Warning>
+  BloodCat is designed for authorized security testing and research only. Always ensure you have explicit permission before testing any network infrastructure. Unauthorized access to computer systems is illegal.
+</Warning>
+
+- **Security Auditing** — Identify weak credentials in your organization's camera infrastructure
+- **Penetration Testing** — Assess camera security as part of comprehensive network assessments
+- **Research** — Study the prevalence of default credentials in IoT devices
+- **Compliance** — Verify that deployed cameras meet security hardening requirements
+
+## Quick Example
+
+Test a specific camera:
+
+```bash
+python3 bloodcat.py --ip "192.168.1.100:554"
+```
+
+Discover cameras in a region using FoFa:
+
+```bash
+python3 bloodcat.py --country CN --region HK --key YOUR_FOFA_API_KEY
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install dependencies and get BloodCat running
+  </Card>
+  <Card title="Command Reference" icon="terminal" href="/usage/command-reference">
+    Explore all available commands and options
+  </Card>
+  <Card title="Supported Brands" icon="camera" href="/cameras/supported-brands">
+    View detailed camera brand support
+  </Card>
+  <Card title="Examples" icon="code" href="/usage/examples">
+    See real-world usage examples
+  </Card>
+</CardGroup>

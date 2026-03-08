@@ -1,0 +1,259 @@
+---
+title: 'FoFa Integration'
+description: 'Learn how to use FoFa API for geographical camera discovery'
+icon: 'globe'
+---
+
+## Overview
+
+BloodCat integrates with [FoFa](https://fofa.info) (a cyberspace search engine) to discover publicly exposed RTSP cameras based on geographical criteria. This feature enables automated reconnaissance across specific countries, regions, or cities.
+
+## What is FoFa?
+
+FoFa is a cyberspace asset search engine that indexes internet-connected devices and services. BloodCat leverages FoFa's API to discover RTSP cameras matching specific geographical and protocol criteria.
+
+## Getting a FoFa API Key
+
+<Steps>
+  <Step title="Create a FoFa Account">
+    Visit [fofa.info](https://fofa.info) and register for an account.
+  </Step>
+  
+  <Step title="Access API Settings">
+    Navigate to your account settings or API management section.
+  </Step>
+  
+  <Step title="Generate API Key">
+    Generate or locate your API key. FoFa provides different API tiers with varying query limits.
+  </Step>
+  
+  <Step title="Test Your Key">
+    Use the key with BloodCat to verify it works:
+    
+    ```bash
+    python3 bloodcat.py --country US --key "your-api-key-here"
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Keep your FoFa API key secure. Do not commit it to version control or share it publicly.
+</Warning>
+
+## How FoFa Integration Works
+
+### Query Construction
+
+BloodCat constructs FoFa queries based on your geographical parameters. The query logic (from `lib/fofaget.py:17`):
+
+```python
+query_ = f'country="{country}"&&(region="{region}"||city="{city}")&& banner="RTSP/1.0"&&protocol="rtsp"'
+```
+
+This query searches for:
+- **Protocol**: `rtsp` - RTSP protocol devices
+- **Banner**: `RTSP/1.0` - Devices responding with RTSP banner
+- **Country**: Your specified country code
+- **Region OR City**: Your specified region or city
+
+### API Request Flow
+
+<Steps>
+  <Step title="Base64 Encoding">
+    The query string is Base64-encoded for API transmission:
+    
+    ```python
+    qbase64 = base64.b64encode(query_.encode()).decode()
+    ```
+  </Step>
+  
+  <Step title="API Request">
+    BloodCat sends a GET request to FoFa's search endpoint:
+    
+    ```python
+    url = f"https://fofa.info/api/v1/search/all?key={key}&qbase64={qbase64}"
+    data = requests.get(url)
+    ```
+  </Step>
+  
+  <Step title="Parse Results">
+    The API returns JSON with matching IP:PORT pairs:
+    
+    ```python
+    datas = json.loads(data.text)
+    if datas.get('results'):
+        ip_ports = [item[0] for item in datas['results']]
+    ```
+  </Step>
+  
+  <Step title="Sequential Scanning">
+    BloodCat iterates through discovered targets and attempts credential brute-forcing on each.
+  </Step>
+</Steps>
+
+## Geographical Filtering
+
+### Country-Based Queries
+
+Search for RTSP cameras in a specific country:
+
+```bash
+python3 bloodcat.py --country CN --key "your-fofa-api-key"
+```
+
+**Query generated:**
+```
+country="CN"&&(region=""||city="")&& banner="RTSP/1.0"&&protocol="rtsp"
+```
+
+### Region-Based Queries
+
+Narrow down to a specific region:
+
+```bash
+python3 bloodcat.py --country CN --region HK --key "your-fofa-api-key"
+```
+
+**Query generated:**
+```
+country="CN"&&(region="HK"||city="")&& banner="RTSP/1.0"&&protocol="rtsp"
+```
+
+### City-Based Queries
+
+Target a specific city:
+
+```bash
+python3 bloodcat.py --country US --city "Seattle" --key "your-fofa-api-key"
+```
+
+**Query generated:**
+```
+country="US"&&(region=""||city="Seattle")&& banner="RTSP/1.0"&&protocol="rtsp"
+```
+
+### Combined Queries
+
+Use both region and city for flexible matching:
+
+```bash
+python3 bloodcat.py --country CN --region HK --city "Kowloon" --key "your-fofa-api-key"
+```
+
+**Query generated:**
+```
+country="CN"&&(region="HK"||city="Kowloon")&& banner="RTSP/1.0"&&protocol="rtsp"
+```
+
+<Info>
+  The query uses OR logic for region and city, meaning targets matching either criterion will be returned.
+</Info>
+
+## Example Output
+
+When running a geographical query:
+
+```bash
+$ python3 bloodcat.py --country CN --region HK --key "your-api-key"
+```
+
+**Console output:**
+```
+[*] Fetching network cameras in CN HK 
+[+] Got data from Fofa...
+[+] Starting information retrieval
+[+] Testing target: 203.0.113.45:554
+[+] Hikvision detected
+[*] Authentication required detected, preparing to brute-force.
+Progress: 100%|████████████████████| 150/150 [00:45<00:00, 3.33combo/s]
+[+] Successfully obtained RTSP URL
+[!] RTSP URL: rtsp://admin:admin123@203.0.113.45:554/Streaming/Channels/101
+```
+
+## Error Handling
+
+If FoFa query fails, you'll see:
+
+```
+[!] Query error....
+```
+
+Common reasons:
+- Invalid API key
+- API rate limit exceeded
+- No results matching the criteria
+- Network connectivity issues
+
+## Query Parameters Reference
+
+<ParamField path="key" type="string" required>
+  Your FoFa API authentication key.
+</ParamField>
+
+<ParamField path="country" type="string">
+  ISO 3166-1 alpha-2 country code (e.g., CN, US, GB).
+</ParamField>
+
+<ParamField path="region" type="string">
+  Region or state name within the country.
+</ParamField>
+
+<ParamField path="city" type="string">
+  City name for more precise targeting.
+</ParamField>
+
+## API Endpoint
+
+```
+https://fofa.info/api/v1/search/all
+```
+
+**Query Parameters:**
+- `key` - Your API key
+- `qbase64` - Base64-encoded query string
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Broad" icon="expand">
+    Begin with country-level queries, then narrow down to regions or cities as needed.
+  </Card>
+  
+  <Card title="Monitor Rate Limits" icon="gauge">
+    FoFa enforces API rate limits. Space out large queries to avoid hitting limits.
+  </Card>
+  
+  <Card title="Secure Your Key" icon="lock">
+    Never hardcode API keys in scripts. Use environment variables or secure configuration files.
+  </Card>
+  
+  <Card title="Validate Results" icon="check">
+    FoFa data may include stale or incorrect entries. Always validate discovered targets.
+  </Card>
+</CardGroup>
+
+## Code Reference
+
+The complete FoFa integration code is in `lib/fofaget.py:15-28`:
+
+```python
+class Fofa():
+    def query(self,country,key,region,city):
+        print(f"[*] Fetching network cameras in {country} {region} {city}")
+        query_ = f'country="{country}"&&(region="{region}"||city="{city}")&& banner="RTSP/1.0"&&protocol="rtsp"'
+        qbase64 = base64.b64encode(query_.encode()).decode()  
+        url = f"https://fofa.info/api/v1/search/all?key={key}&qbase64={qbase64}"
+        data = requests.get(url)
+        datas = json.loads(data.text)
+        if datas.get('results'):
+            ip_ports = [item[0] for item in datas['results']]
+            print("[+] Got data from Fofa...")
+            return ip_ports
+        else:
+            print("[!] Query error....")
+            return
+```
+
+<Tip>
+  For advanced FoFa queries, refer to the [FoFa Query Syntax Documentation](https://fofa.info) to customize search parameters.
+</Tip>

@@ -1,0 +1,190 @@
+---
+title: 'Command Reference'
+description: 'Complete reference for BloodCat CLI arguments and options'
+icon: 'terminal'
+---
+
+## Overview
+
+BloodCat provides a command-line interface for scanning RTSP cameras with weak credentials. The tool supports both single-target scanning and geographical discovery via FoFa integration.
+
+## Basic Syntax
+
+```bash
+python3 bloodcat.py [OPTIONS]
+```
+
+## Command-Line Arguments
+
+### Single Target Scanning
+
+<ParamField path="--ip" type="string" default="">
+  Specify a single IP address and port to scan in the format `IP:PORT`.
+  
+  **Example:**
+  ```bash
+  python3 bloodcat.py --ip "80.191.192.230:554"
+  ```
+  
+  When this option is provided, BloodCat will scan only the specified target without using FoFa API.
+</ParamField>
+
+### Geographical Discovery
+
+<ParamField path="--key" type="string" default="" required>
+  Your FoFa API key for performing geographical queries.
+  
+  **Example:**
+  ```bash
+  python3 bloodcat.py --country CN --key "your-fofa-api-key"
+  ```
+  
+  <Warning>
+    Required when using geographical discovery mode (--country, --region, or --city).
+  </Warning>
+</ParamField>
+
+<ParamField path="--country" type="string" default="">
+  Filter targets by country code (ISO 3166-1 alpha-2 format).
+  
+  **Example:**
+  ```bash
+  python3 bloodcat.py --country CN --key "your-fofa-api-key"
+  ```
+  
+  Common country codes:
+  - `CN` - China
+  - `US` - United States
+  - `GB` - United Kingdom
+  - `JP` - Japan
+  - `DE` - Germany
+</ParamField>
+
+<ParamField path="--region" type="string" default="">
+  Filter targets by region or state within a country.
+  
+  **Example:**
+  ```bash
+  python3 bloodcat.py --country CN --region HK --key "your-fofa-api-key"
+  ```
+  
+  <Info>
+    Region names vary by country. Use common abbreviations or full names.
+  </Info>
+</ParamField>
+
+<ParamField path="--city" type="string" default="">
+  Filter targets by city name.
+  
+  **Example:**
+  ```bash
+  python3 bloodcat.py --country US --city "New York" --key "your-fofa-api-key"
+  ```
+  
+  <Tip>
+    You can combine --region and --city for more precise targeting.
+  </Tip>
+</ParamField>
+
+## Usage Modes
+
+<CardGroup cols={2}>
+  <Card title="Single Target Mode" icon="bullseye">
+    Use `--ip` to scan a specific camera without FoFa integration.
+    
+    ```bash
+    python3 bloodcat.py --ip "192.168.1.100:554"
+    ```
+  </Card>
+  
+  <Card title="Discovery Mode" icon="globe">
+    Use `--key` with geographical filters to discover multiple targets.
+    
+    ```bash
+    python3 bloodcat.py --country CN --region HK --key "YOUR_KEY"
+    ```
+  </Card>
+</CardGroup>
+
+## Complete Examples
+
+### Single IP Scan
+
+```bash
+python3 bloodcat.py --ip "80.191.192.230:554"
+```
+
+This command scans a single RTSP camera at the specified IP and port.
+
+### Country-Based Discovery
+
+```bash
+python3 bloodcat.py --country CN --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Discovery all RTSP cameras in China using your FoFa API key.
+
+### Region-Based Discovery
+
+```bash
+python3 bloodcat.py --country CN --region HK --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Discovery RTSP cameras specifically in Hong Kong.
+
+### City-Based Discovery
+
+```bash
+python3 bloodcat.py --country US --city "Los Angeles" --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Discovery RTSP cameras in Los Angeles, United States.
+
+### Combined Filters
+
+```bash
+python3 bloodcat.py --country CN --region HK --city "Kowloon" --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Use multiple geographical filters for precise targeting.
+
+## Help Command
+
+Display all available options:
+
+```bash
+python3 bloodcat.py -h
+```
+
+Output:
+```
+usage: bloodcat.py [-h] [--country COUNTRY] [--city CITY] [--region REGION] 
+                   [--key KEY] [--ip IP]
+
+Blood Cat - RTSP Camera Weak Credential Scanner
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --country COUNTRY  Country
+  --city CITY        City
+  --region REGION    Area
+  --key KEY          Fofa API key
+  --ip IP            IP:PORT
+```
+
+## Argument Parsing Details
+
+BloodCat uses Python's `argparse` module with the following configuration (from `bloodcat.py:50-56`):
+
+```python
+parser = argparse.ArgumentParser(description='Blood Cat - RTSP Camera Weak Credential Scanner')
+parser.add_argument('--country', default='', type=str, help='Country')
+parser.add_argument('--city', default='', type=str, help='City')
+parser.add_argument('--region', default='', type=str, help='Area')
+parser.add_argument('--key',  default='', type=str, help='Fofa API key')
+parser.add_argument('--ip', default='', type=str, help='IP:PORT')
+```
+
+<Note>
+  All arguments are optional with empty string defaults, but practical usage requires either `--ip` or `--key` with geographical filters.
+</Note>

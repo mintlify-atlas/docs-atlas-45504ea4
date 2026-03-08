@@ -1,0 +1,349 @@
+---
+title: 'Troubleshooting'
+description: 'Common issues and solutions when using BloodCat'
+---
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="ffmpeg/ffplay is not installed">
+    **Symptom:**
+    ```
+    ffplay is not installed.
+    You can install it by running:
+      sudo apt update && sudo apt install ffmpeg
+    ```
+    
+    **Solution:**
+    
+    Install FFmpeg using your package manager:
+    
+    **Ubuntu/Debian:**
+    ```bash
+    sudo apt update && sudo apt install ffmpeg
+    ```
+    
+    **macOS:**
+    ```bash
+    brew install ffmpeg
+    ```
+    
+    **Arch Linux:**
+    ```bash
+    sudo pacman -S ffmpeg
+    ```
+    
+    **Verify installation:**
+    ```bash
+    ffplay -version
+    ```
+  </Accordion>
+
+  <Accordion title="Connection timeouts">
+    **Symptom:**
+    ```
+    [+] Testing target: 192.168.1.100:554
+    [...] Skip
+    ```
+    
+    **Causes:**
+    - Target is offline or unreachable
+    - Firewall blocking RTSP port (554)
+    - Network connectivity issues
+    - Target is not an RTSP camera
+    
+    **Solutions:**
+    
+    1. **Verify target is reachable:**
+       ```bash
+       ping 192.168.1.100
+       ```
+    
+    2. **Check if RTSP port is open:**
+       ```bash
+       nc -zv 192.168.1.100 554
+       ```
+       or
+       ```bash
+       nmap -p 554 192.168.1.100
+       ```
+    
+    3. **Increase timeout** (edit `lib/camlib.py:231`):
+       ```python
+       sock.settimeout(10)  # Increase from 5 to 10 seconds
+       ```
+    
+    4. **Check firewall rules:**
+       ```bash
+       sudo iptables -L -n | grep 554
+       ```
+  </Accordion>
+
+  <Accordion title="Authentication failures (no credentials found)">
+    **Symptom:**
+    
+    The progress bar completes but no RTSP URL is saved to `./data/ipcam.info`.
+    
+    **Causes:**
+    - Camera uses strong passwords not in the dictionary
+    - Camera has non-standard username
+    - Authentication method not supported
+    
+    **Solutions:**
+    
+    1. **Add custom passwords** to the dictionary (edit `lib/camlib.py:130-163`):
+       ```python
+       self.__PASSWORD = [
+           '123456',
+           'admin',
+           'your_custom_password',  # Add here
+           # ... rest of passwords
+       ]
+       ```
+    
+    2. **Add custom usernames** for specific vendors (edit vendor methods in `lib/camlib.py`):
+       ```python
+       def Hikvision(self):
+           users = ['admin', 'root', 'supervisor', 'custom_user']  # Add here
+           # ...
+       ```
+    
+    3. **Verify camera vendor** is detected correctly:
+       - Check console output for detected vendor
+       - If "Unknown or clone device detected", the camera may use non-standard paths
+  </Accordion>
+
+  <Accordion title="FoFa API errors">
+    **Symptom:**
+    ```
+    [!] Query error....
+    ```
+    
+    **Causes:**
+    - Invalid API key
+    - API quota exceeded
+    - Malformed query parameters
+    - Network connectivity issues
+    
+    **Solutions:**
+    
+    1. **Verify API key:**
+       ```bash
+       python3 bloodcat.py --key YOUR_KEY --country US --city "New York" --region NY
+       ```
+    
+    2. **Check API response manually:**
+       ```python
+       import requests
+       import base64
+       
+       query = 'country="US" && banner="RTSP/1.0" && protocol="rtsp"'
+       qbase64 = base64.b64encode(query.encode()).decode()
+       url = f"https://fofa.info/api/v1/search/all?key=YOUR_KEY&qbase64={qbase64}"
+       
+       response = requests.get(url)
+       print(response.text)
+       ```
+    
+    3. **Check quota:**
+       - Log into your FoFa account
+       - Check remaining API credits
+    
+    4. **Use direct IP instead:**
+       ```bash
+       python3 bloodcat.py --ip 192.168.1.100:554
+       ```
+  </Accordion>
+
+  <Accordion title="File ./data/ipcam.info not found (when running play.sh)">
+    **Symptom:**
+    ```
+    File ./data/ipcam.info not found!
+    ```
+    
+    **Causes:**
+    - BloodCat hasn't been run yet
+    - No cameras were successfully cracked
+    - Running from wrong directory
+    
+    **Solutions:**
+    
+    1. **Run BloodCat first:**
+       ```bash
+       python3 bloodcat.py --ip 192.168.1.100:554
+       ```
+    
+    2. **Verify file exists:**
+       ```bash
+       ls -la ./data/ipcam.info
+       ```
+    
+    3. **Check if file is empty:**
+       ```bash
+       cat ./data/ipcam.info
+       ```
+    
+    4. **Ensure you're in the correct directory:**
+       ```bash
+       pwd  # Should be in BloodCat root directory
+       ```
+  </Accordion>
+
+  <Accordion title="Permission denied errors">
+    **Symptom:**
+    ```
+    PermissionError: [Errno 13] Permission denied: './data/ipcam.info'
+    ```
+    or
+    ```bash
+    bash: ./play.sh: Permission denied
+    ```
+    
+    **Solutions:**
+    
+    1. **Make scripts executable:**
+       ```bash
+       chmod +x bloodcat.py play.sh
+       ```
+    
+    2. **Fix directory permissions:**
+       ```bash
+       chmod 755 ./data
+       chmod 644 ./data/ipcam.info
+       ```
+    
+    3. **Run with proper permissions:**
+       ```bash
+       python3 bloodcat.py --ip 192.168.1.100:554
+       bash play.sh
+       ```
+  </Accordion>
+
+  <Accordion title="Video stream won't play in ffplay">
+    **Symptom:**
+    
+    ffplay opens but shows black screen, error, or immediately closes.
+    
+    **Causes:**
+    - Invalid RTSP URL
+    - Camera credentials changed
+    - Network connectivity lost
+    - Codec not supported
+    
+    **Solutions:**
+    
+    1. **Test URL manually:**
+       ```bash
+       ffplay -rtsp_transport tcp "rtsp://admin:123456@192.168.1.100:554/live.sdp"
+       ```
+    
+    2. **Try UDP transport:**
+       ```bash
+       ffplay -rtsp_transport udp "rtsp://admin:123456@192.168.1.100:554/live.sdp"
+       ```
+    
+    3. **Check with VLC:**
+       ```bash
+       vlc "rtsp://admin:123456@192.168.1.100:554/live.sdp"
+       ```
+    
+    4. **Verify camera is still accessible:**
+       ```bash
+       nc -zv 192.168.1.100 554
+       ```
+    
+    5. **Check ffplay logs:**
+       ```bash
+       ffplay -rtsp_transport tcp -loglevel debug "rtsp://..."
+       ```
+  </Accordion>
+
+  <Accordion title="Too many open windows">
+    **Symptom:**
+    
+    `play.sh` opens dozens of windows and system becomes slow.
+    
+    **Solution:**
+    
+    1. **Stop all ffplay instances:**
+       ```bash
+       pkill ffplay
+       ```
+    
+    2. **Limit URLs in ipcam.info:**
+       ```bash
+       head -n 10 ./data/ipcam.info > ./data/ipcam_subset.info
+       ```
+       
+       Then edit `play.sh` to use `ipcam_subset.info` instead.
+    
+    3. **Add delay between streams** (edit `play.sh:36`):
+       ```bash
+       sleep 2  # Increase from 1 to 2 seconds
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Network Issues
+
+### Firewall Configuration
+
+If you're scanning cameras on a local network, ensure:
+
+1. **Outbound RTSP allowed:**
+   ```bash
+   sudo iptables -A OUTPUT -p tcp --dport 554 -j ACCEPT
+   ```
+
+2. **Check if firewall is blocking:**
+   ```bash
+   sudo iptables -L -n -v | grep 554
+   ```
+
+### VPN/Proxy Issues
+
+RTSP streaming may not work properly through some VPNs or proxies.
+
+<Warning>
+  Disable VPN temporarily if you experience connectivity issues.
+</Warning>
+
+## Getting Help
+
+### Enable Debug Output
+
+Edit `lib/camlib.py` to add more verbose output:
+
+```python
+def __rtsp_path_bruteforce(self, ip, port, paths, usernames):
+    print(f"[DEBUG] Testing {len(usernames)} users, {len(self.__PASSWORD)} passwords, {len(paths)} paths")
+    print(f"[DEBUG] Total combinations: {len(usernames) * len(self.__PASSWORD) * len(paths)}")
+    # ... rest of method
+```
+
+### Check Python Version
+
+BloodCat requires Python 3:
+
+```bash
+python3 --version
+```
+
+Minimum supported version: Python 3.6+
+
+### Report Issues
+
+If you encounter a bug, report it at:
+
+**GitHub:** [https://github.com/MartinxMax/BloodCat](https://github.com/MartinxMax/BloodCat)
+
+Include:
+- Python version
+- Operating system
+- Full error message
+- Command used
+- Network configuration (if relevant)
+
+<Info>
+  Remember: BloodCat is an ethical security research tool. Only use it on systems you own or have explicit permission to test.
+</Info>

