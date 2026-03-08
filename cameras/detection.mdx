@@ -215,12 +215,16 @@ Typical RTSP server banners that BloodCat detects:
 <Note>
 By detecting the camera brand, BloodCat significantly reduces brute-force time:
 
-- **Hikvision**: 3 users × 6 paths = 18 combinations per password
-- **Unknown device**: 1 user × 19 paths = 19 combinations per password
-- **Without detection**: Would need to test all possible combinations
+- **Hikvision**: 3 users × 6 paths × 33 passwords = 594 total combinations
+- **Unknown device**: 1 user × 19 paths × 33 passwords = 627 total combinations
+- **Without detection**: Would need to test all possible combinations across all brands
 
 Brand detection allows BloodCat to use brand-specific usernames (like `supervisor` for Hikvision or `system` for Dahua), which increases success rates.
 </Note>
+
+<Info>
+BloodCat tests 33 common default passwords including `admin`, `123456`, `password`, `12345678`, and others commonly found in IoT devices. See `lib/camlib.py:130-164` for the complete password list.
+</Info>
 
 ## Error Handling
 
